@@ -22,6 +22,12 @@ const Repository = struct {
     lines_changed: u32,
     views: u32,
     private: bool,
+    is_fork: bool = false,
+
+    pub fn isOwnedNonFork(self: @This(), user: []const u8) bool {
+        const owner_end = std.mem.indexOfScalar(u8, self.name, '/') orelse return false;
+        return !self.is_fork and std.ascii.eqlIgnoreCase(self.name[0..owner_end], user);
+    }
 
     pub fn deinit(self: @This(), allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -261,6 +267,7 @@ fn getReposByYear(
         \\      commitContributionsByRepository(maxRepositories: 100) {
         \\        repository {
         \\          nameWithOwner
+        \\          isFork
         \\          stargazerCount
         \\          forkCount
         \\          isPrivate
@@ -317,6 +324,7 @@ fn getReposByYear(
                 commitContributionsByRepository: []struct {
                     repository: struct {
                         nameWithOwner: []const u8,
+                        isFork: bool,
                         stargazerCount: u32,
                         forkCount: u32,
                         isPrivate: bool,
@@ -391,6 +399,7 @@ fn getReposByYear(
             .stars = raw_repo.stargazerCount,
             .forks = raw_repo.forkCount,
             .private = raw_repo.isPrivate,
+            .is_fork = raw_repo.isFork,
             .languages = null,
             .views = 0,
             .lines_changed = 0,
